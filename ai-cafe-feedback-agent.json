@@ -1,0 +1,680 @@
+{
+  "name": "ai-cafe-feedback-agent",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1m7WwezWBoES76AohO0jRLNM2Q18yxzGymZem6rtSVjo",
+          "mode": "list",
+          "cachedResultName": "Copy of Daily Bean Feedback ",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1m7WwezWBoES76AohO0jRLNM2Q18yxzGymZem6rtSVjo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1701422629,
+          "mode": "list",
+          "cachedResultName": "Test Data - convert",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1m7WwezWBoES76AohO0jRLNM2Q18yxzGymZem6rtSVjo/edit#gid=1701422629"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1696,
+        64
+      ],
+      "id": "15749af4-2477-4e17-8051-1dd3e5398fb3",
+      "name": "Google Sheets Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "87hTvw75qW2yyJut",
+          "name": "Google Sheets Trigger OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "39d658e3-e0a6-4bbe-a5b9-4be99ce713c0",
+              "name": "Name",
+              "value": "={{ $json.Name }}",
+              "type": "string"
+            },
+            {
+              "id": "1f9ca7a1-5834-45f2-9eac-39bc5cc27b4b",
+              "name": "Contact",
+              "value": "={{ $json.Contact }}",
+              "type": "string"
+            },
+            {
+              "id": "ceac9ea6-69d5-4eaa-a651-584dae3486b8",
+              "name": "Feedback",
+              "value": "={{ $json.Feedback }}",
+              "type": "string"
+            },
+            {
+              "id": "ada71283-e5f4-464d-964e-16557381ad11",
+              "name": "Timestamp",
+              "value": "={{ $json.Timestamp }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "ignoreConversionErrors": true
+        }
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1488,
+        64
+      ],
+      "id": "5cccbca2-e022-4e2d-9502-fbf8e6b0d186",
+      "name": "Extract Data"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Task:\nAnalyze the customer’s feedback and determine (1) its category and (2) the relevant business area (Daily Bean Cafe).\n\nInput:\nFeedback: {{ $json.Feedback }}\n\nValid Categories:\n- question\n- problem\n- suggestion\n- other\n- unknown, if the feedback is missing, empty, irrelevant, or cannot be interpreted\n\nValid Areas:\n- kitchen\n- delivery\n- service\n- other\n- unknown, if the feedback is missing, empty, irrelevant, or cannot be interpreted\n\nInstructions:\n- NEVER create new labels, If unsure → set \"other\"\n- First validate that the feedback text is meaningful (not empty, null, too short to interpret, or containing only non-informative content).\n- If feedback is valid, classify it into one category and one area from the provided lists.\n- If classification is not possible, use the fallback \"unknown\" for the unassignable part(s).\n- Base your decision strictly on the content of the feedback.\n",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -1280,
+        64
+      ],
+      "id": "34a13382-4446-4f3d-aa06-34f39f570f7a",
+      "name": "AI Categorization"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\"category\": \"question\",\n\"area\": \"kitchen\"\n}\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -1024,
+        256
+      ],
+      "id": "ba22e303-4a17-4ce2-8433-73a7f0c44125",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -1424,
+        272
+      ],
+      "id": "1eaba0cb-14c2-489b-baac-42c32b47743c",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "BDMNIJE1xLaeKQ1G",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0419e5d5-5233-4e17-98f6-b591c84de004",
+              "name": "=category",
+              "value": "={{ $json.output.category.toLowerCase() }}",
+              "type": "string"
+            },
+            {
+              "id": "68d9db23-f928-4052-aee1-96045e1b6bbb",
+              "name": "=area",
+              "value": "={{ $json.output.area.toLowerCase() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -928,
+        64
+      ],
+      "id": "362ce517-4b22-433b-bfb3-6d01b79e116e",
+      "name": "Normalized Labes"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1m7WwezWBoES76AohO0jRLNM2Q18yxzGymZem6rtSVjo",
+          "mode": "list",
+          "cachedResultName": "Copy of Daily Bean Feedback ",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1m7WwezWBoES76AohO0jRLNM2Q18yxzGymZem6rtSVjo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1701422629,
+          "mode": "list",
+          "cachedResultName": "Test Data - convert",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1m7WwezWBoES76AohO0jRLNM2Q18yxzGymZem6rtSVjo/edit#gid=1701422629"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ID": "={{ $('Google Sheets Trigger').item.json.ID }}",
+            "Category": "={{ $('Google Sheets Trigger').item.json.Category }}",
+            "Area": "={{ $('Google Sheets Trigger').item.json.Area }}"
+          },
+          "matchingColumns": [
+            "ID"
+          ],
+          "schema": [
+            {
+              "id": "ID",
+              "displayName": "ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Contact",
+              "displayName": "Contact",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Feedback",
+              "displayName": "Feedback",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Area",
+              "displayName": "Area",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Responsible",
+              "displayName": "Responsible",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -720,
+        64
+      ],
+      "id": "e0adbd6b-b8e1-4b7b-b46e-e40d5731c9a5",
+      "name": "Update feedback Row",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "PVsHerFMc2GDVz9V",
+          "name": "Google Sheets account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "53fdc3bf-e4e5-4d93-bcdf-c66c887524f0",
+              "leftValue": "={{ $('Normalized Labes').item.json.category }}",
+              "rightValue": "unknown",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "aff0c8eb-7519-439b-8127-211ae2433463",
+              "leftValue": "={{ $('Normalized Labes').item.json.area }}",
+              "rightValue": "unknown",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -512,
+        64
+      ],
+      "id": "c71f669a-ce00-4f8a-a781-4534dcad077a",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Normalized Labes').item.json.area }}",
+                    "rightValue": "kitchen",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "6208e509-627a-43b2-b0dd-c499d09b8987"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "kitchen"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "b6d481a5-7383-4331-b51c-672acd0d1078",
+                    "leftValue": "={{ $('Normalized Labes').item.json.area }}",
+                    "rightValue": "delivery",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "delivery"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c3f20568-6655-4122-b62e-4f56dc9af1e7",
+                    "leftValue": "={{ $('Normalized Labes').item.json.area }}",
+                    "rightValue": "service",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "service"
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -304,
+        160
+      ],
+      "id": "f9aa3844-36b5-4cf8-b009-8475d3540839",
+      "name": "Route by Area"
+    },
+    {
+      "parameters": {
+        "sendTo": "patelriddhi2133@gmail.com",
+        "subject": "=New Review {{ $('Normalized Labes').item.json.category }}",
+        "emailType": "text",
+        "message": "=Hi team,\nA new feedback came in:\n\nFeedback: {{ $('Extract Data').item.json.Feedback }}\nCategory: {{ $('Normalized Labes').item.json.category }}\nArea: {{ $('Normalized Labes').item.json.area }} \nTimestamp: {{ $('Extract Data').item.json.Timestamp }}\n\n– Daily Bean Feedback Agent\n\n",
+        "options": {
+          "senderName": "Feedback Collector"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        160
+      ],
+      "id": "1062f8fc-25b6-45c0-bbb0-89a91d3044c4",
+      "name": "Delivery",
+      "webhookId": "c788b654-9e5c-4276-b5bf-483735dbc37a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "56gpkmyVHu2fhx4H",
+          "name": "Gmail account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "riddhipatel2103@gmail.com",
+        "subject": "=New Review {{ $('Normalized Labes').item.json.category }}",
+        "emailType": "text",
+        "message": "=Hi team,\nA new feedback came in:\n\nFeedback: {{ $('Extract Data').item.json.Feedback }}\nCategory: {{ $('Normalized Labes').item.json.category }}\nArea: {{ $('Normalized Labes').item.json.area }} \nTimestamp: {{ $('Extract Data').item.json.Timestamp }}\n\n– Daily Bean Feedback Agent\n\n",
+        "options": {
+          "senderName": "Feedback Collector"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "21fc5cd4-19d6-442a-b756-d78cf2a146e4",
+      "name": "Kitchen",
+      "webhookId": "c788b654-9e5c-4276-b5bf-483735dbc37a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "56gpkmyVHu2fhx4H",
+          "name": "Gmail account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "riddhipatel2103@gmail.com",
+        "subject": "=New Review {{ $('Normalized Labes').item.json.category }}",
+        "emailType": "text",
+        "message": "=Hi team,\nA new feedback came in:\n\nFeedback: {{ $('Extract Data').item.json.Feedback }}\nCategory: {{ $('Normalized Labes').item.json.category }}\nArea: {{ $('Normalized Labes').item.json.area }} \nTimestamp: {{ $('Extract Data').item.json.Timestamp }}\n\n– Daily Bean Feedback Agent\n\n",
+        "options": {
+          "senderName": "Feedback Collector"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        352
+      ],
+      "id": "1b7d7c4e-0772-43d0-8b82-90e4edd6472f",
+      "name": "Service",
+      "webhookId": "c788b654-9e5c-4276-b5bf-483735dbc37a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "56gpkmyVHu2fhx4H",
+          "name": "Gmail account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "riddhipatel2103@gmail.com",
+        "subject": "=New Review {{ $('Normalized Labes').item.json.category }}",
+        "emailType": "text",
+        "message": "=Hi team,\nA new feedback came in:\n\nFeedback: {{ $('Extract Data').item.json.Feedback }}\nCategory: {{ $('Normalized Labes').item.json.category }}\nArea: {{ $('Normalized Labes').item.json.area }} \nTimestamp: {{ $('Extract Data').item.json.Timestamp }}\n\n– Daily Bean Feedback Agent\n\n",
+        "options": {
+          "senderName": "Feedback Collector"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        512
+      ],
+      "id": "6d704fd2-9574-46c1-92bd-792afba55213",
+      "name": "Fallback",
+      "webhookId": "c788b654-9e5c-4276-b5bf-483735dbc37a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "56gpkmyVHu2fhx4H",
+          "name": "Gmail account 3"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Data": {
+      "main": [
+        [
+          {
+            "node": "AI Categorization",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Categorization",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Categorization",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Categorization": {
+      "main": [
+        [
+          {
+            "node": "Normalized Labes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalized Labes": {
+      "main": [
+        [
+          {
+            "node": "Update feedback Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update feedback Row": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Route by Area",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Area": {
+      "main": [
+        [
+          {
+            "node": "Kitchen",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Delivery",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Service",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "6a43d079-595d-42cc-98e2-752c26fc6202",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "7af38de30bb335ccbd898c9f49d8e330c54f3f539cb79d146a7c68ae3c1a5e03"
+  },
+  "id": "ElAC47dMNP8EvLFn",
+  "tags": []
+}
